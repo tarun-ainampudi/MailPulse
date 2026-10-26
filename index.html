@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailPulse - Email Deliverability & MX Verification Suite</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for stats breakdown -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js" defer></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP NAVIGATION HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/90">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i data-lucide="mail-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-xl tracking-tight text-slate-900">MailPulse</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200/60">Live DoH Verifier</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">RFC 5322 &bull; DNS-over-HTTPS MX &bull; Catch-All Heuristics</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <button id="openDocsBtn" class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Port 25 & Host Limitations</span>
+        </button>
+        <button id="openSampleBtn" class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all hover:shadow">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Load Sample Emails</span>
+          <span class="sm:hidden">Samples</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    
+    <!-- HERO / BANNER -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden shadow-xl">
+      <div class="absolute -right-10 -bottom-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute right-1/4 top-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-medium text-indigo-200 mb-3 border border-white/10">
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-300"></i>
+          No unconsented test emails sent &bull; 100% Privacy-Preserving
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2">
+          Verify Email Deliverability with Live MX Records
+        </h1>
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+          Paste a batch of email addresses to test syntax conformity, disposable domain usage, mailbox role flags, and live DNS mail exchange (<code class="bg-white/10 px-1 py-0.5 rounded text-indigo-200">MX</code>) routing via DNS-over-HTTPS.
+        </p>
+      </div>
+    </div>
+
+    <!-- MAIN GRID: INPUT & STATS OVERVIEW -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT: INPUT & OPTIONS (5 COLS) -->
+      <section class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <label for="emailInput" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="list-plus" class="w-4 h-4 text-indigo-600"></i>
+            Email Address Input
+          </label>
+          <span id="detectedCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            0 emails detected
+          </span>
+        </div>
+
+        <p class="text-xs text-slate-500 leading-normal">
+          Separate addresses by newlines, commas, or semicolons. Spaces and quotes will be trimmed automatically.
+        </p>
+
+        <div class="relative">
+          <textarea 
+            id="emailInput" 
+            rows="10" 
+            class="w-full text-sm font-mono p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none bg-slate-50/50 custom-scrollbar placeholder:text-slate-400"
+            placeholder="alice@gmail.com&#10;support@stripe.com&#10;user@nonexistentdomain999.xyz&#10;fake-temp@10minutemail.com&#10;broken..syntax@domain.com"
+          ></textarea>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
+          <div class="flex items-center gap-1.5">
+            <input type="checkbox" id="skipDisposable" class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+            <label for="skipDisposable" class="cursor-pointer">Flag disposable domains as bounce</label>
+          </div>
+          <button id="clearBtn" class="text-xs text-rose-500 hover:text-rose-700 font-semibold hover:underline">
+            Clear list
+          </button>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="pt-2 flex flex-col gap-2">
+          <button 
+            id="startVerifyBtn" 
+            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+            <span id="verifyBtnLabel">Verify All Addresses</span>
+          </button>
+          
+          <div id="progressContainer" class="hidden space-y-1.5 pt-2">
+            <div class="flex justify-between text-xs font-medium text-slate-600">
+              <span id="progressLabel">Verifying DNS MX &amp; Syntax...</span>
+              <span id="progressPercent">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+              <div id="progressBar" class="bg-indigo-600 h-full rounded-full transition-all duration-200" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK INFO CALLOUT -->
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600 space-y-1.5">
+          <div class="font-semibold text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-500"></i>
+            How We Evaluate Status:
+          </div>
+          <ul class="list-disc list-inside space-y-1 pl-1 text-[11px] text-slate-500">
+            <li><strong class="text-emerald-700">Likely Delivered:</strong> Valid RFC syntax, active domain, configured MX records ready to accept mail.</li>
+            <li><strong class="text-rose-700">Likely to Bounce:</strong> Syntax error, missing DNS/MX records, dead host, or disposable domain.</li>
+            <li><strong class="text-amber-700">Unknown:</strong> Valid server found, but individual mailbox existence is unconfirmable without sending live mail.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- RIGHT: METRICS & CHARTS (7 COLS) -->
+      <section class="lg:col-span-7 space-y-6">
+        
+        <!-- SUMMARY STATS TILES -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <!-- Total -->
+          <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total</span>
+              <i data-lucide="hash" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div id="metricTotal" class="text-2xl font-extrabold text-slate-800">0</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Parsed entries</div>
+          </div>
+
+          <!-- Delivered -->
+          <div class="bg-white border border-emerald-200/80 bg-emerald-50/20 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-emerald-600 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Delivered</span>
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+            </div>
+            <div id="metricDelivered" class="text-2xl font-extrabold text-emerald-600">0</div>
+            <div id="metricDeliveredRate" class="text-[11px] font-medium text-emerald-600 mt-0.5">0% of total</div>
+          </div>
+
+          <!-- Bounce -->
+          <div class="bg-white border border-rose-200/80 bg-rose-50/20 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-rose-600 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-rose-800">Bounce</span>
+              <i data-lucide="x-circle" class="w-4 h-4 text-rose-600"></i>
+            </div>
+            <div id="metricBounce" class="text-2xl font-extrabold text-rose-600">0</div>
+            <div id="metricBounceRate" class="text-[11px] font-medium text-rose-600 mt-0.5">0% of total</div>
+          </div>
+
+          <!-- Unknown -->
+          <div class="bg-white border border-amber-200/80 bg-amber-50/20 rounded-xl p-3.5 shadow-sm">
+            <div class="flex items-center justify-between text-amber-600 mb-1">
+              <span class="text-xs font-semibold uppercase tracking-wider text-amber-800">Unknown</span>
+              <i data-lucide="help-circle" class="w-4 h-4 text-amber-600"></i>
+            </div>
+            <div id="metricUnknown" class="text-2xl font-extrabold text-amber-600">0</div>
+            <div id="metricUnknownRate" class="text-[11px] font-medium text-amber-600 mt-0.5">0% of total</div>
+          </div>
+        </div>
+
+        <!-- LIVE VISUAL DIAGNOSTICS & CHART -->
+        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-sm font-bold text-slate-800">Deliverability Overview &amp; Health</h2>
+              <p class="text-xs text-slate-500">Real-time status breakdown for current batch</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                Live DNS-over-HTTPS (DoH)
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div class="md:col-span-5 h-44 flex items-center justify-center relative">
+              <canvas id="statusChart"></canvas>
+              <div id="chartEmptyPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300 text-xs">
+                <i data-lucide="pie-chart" class="w-8 h-8 mb-1 opacity-50"></i>
+                <span>Awaiting validation</span>
+              </div>
+            </div>
+
+            <div class="md:col-span-7 space-y-2.5 text-xs">
+              <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span class="text-slate-600 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  Valid MX Configured
+                </span>
+                <span id="statMxFound" class="font-bold text-slate-800">0</span>
+              </div>
+              <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span class="text-slate-600 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  No MX / NXDOMAIN (Dead Domain)
+                </span>
+                <span id="statNoMx" class="font-bold text-slate-800">0</span>
+              </div>
+              <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span class="text-slate-600 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                  Disposable / Temp Inboxes
+                </span>
+                <span id="statDisposable" class="font-bold text-slate-800">0</span>
+              </div>
+              <div class="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                <span class="text-slate-600 flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                  Role Accounts (admin, support, info)
+                </span>
+                <span id="statRole" class="font-bold text-slate-800">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- RESULTS TABLE SECTION -->
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <!-- TABLE CONTROLS BAR -->
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="table-2" class="w-4 h-4 text-indigo-600"></i>
+            Detailed Verification Results
+          </h2>
+          <p class="text-xs text-slate-500">Inspect MX servers, RFC syntax diagnostics, and bounce risk assessment.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Filter Tabs -->
+          <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs">
+            <button class="filter-btn px-2.5 py-1 rounded-md font-semibold text-slate-600 bg-white shadow-xs" data-filter="all">All</button>
+            <button class="filter-btn px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900" data-filter="delivered">Delivered</button>
+            <button class="filter-btn px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900" data-filter="bounce">Bounce</button>
+            <button class="filter-btn px-2.5 py-1 rounded-md font-semibold text-slate-600 hover:text-slate-900" data-filter="unknown">Unknown</button>
+          </div>
+
+          <!-- Search Input -->
+          <div class="relative">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+            <input 
+              type="text" 
+              id="tableSearch" 
+              placeholder="Search domain or user..." 
+              class="pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44 sm:w-56"
+            >
+          </div>
+
+          <!-- Export Dropdown -->
+          <div class="relative inline-block text-left">
+            <button id="exportDropdownBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export</span>
+            </button>
+            <div id="exportMenu" class="hidden absolute right-0 mt-2 w-36 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-slate-100 z-20">
+              <div class="py-1">
+                <button id="exportCsvBtn" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> CSV File
+                </button>
+                <button id="exportJsonBtn" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2">
+                  <i data-lucide="file-code" class="w-3.5 h-3.5"></i> JSON Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS TABLE -->
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 uppercase font-semibold text-[10px] tracking-wider">
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4">Email Address</th>
+              <th class="py-3 px-4">Mail Exchanger (MX DNS)</th>
+              <th class="py-3 px-4">Type / Badges</th>
+              <th class="py-3 px-4">Diagnostic Reason</th>
+              <th class="py-3 px-4 text-right">Details</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTableBody" class="divide-y divide-slate-100 font-sans">
+            <!-- Empty state default -->
+            <tr id="tableEmptyState">
+              <td colspan="6" class="py-12 text-center text-slate-400">
+                <div class="flex flex-col items-center justify-center space-y-2">
+                  <div class="p-3 bg-slate-100 rounded-full text-slate-400">
+                    <i data-lucide="inbox" class="w-6 h-6"></i>
+                  </div>
+                  <p class="font-medium text-slate-600 text-sm">No emails verified yet</p>
+                  <p class="text-xs text-slate-400 max-w-sm">
+                    Paste email addresses in the left box and click "Verify All Addresses", or click "Load Sample Emails" to preview realistic results.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLE FOOTER -->
+      <div class="p-3 bg-slate-50/70 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <span id="tableResultsCount">Showing 0 results</span>
+        <span class="text-[11px] text-slate-400">RFC 5322 &bull; Cloudflare DNS 1.1.1.1 &bull; Google DNS 8.8.8.8</span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded bg-indigo-600 text-white flex items-center justify-center font-bold text-[10px]">MP</div>
+        <span class="font-bold text-slate-700">MailPulse Deliverability Suite</span>
+        <span>&mdash; Designed for reliability and compliance.</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <a href="#docs" id="footerDocsLink" class="hover:text-indigo-600 underline">Port 25 Technical Limitations</a>
+        <span>&bull;</span>
+        <span class="text-slate-400">Zero Unconsented SMTP Probing</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DETAIL MODAL -->
+  <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center gap-2.5">
+          <span id="modalStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700">Status</span>
+          <h3 class="font-bold text-slate-900 text-base" id="modalEmailTitle">email@example.com</h3>
+        </div>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Verification Diagnosis</label>
+          <p id="modalReason" class="mt-1 text-slate-600 text-sm font-medium bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            Diagnosis details will appear here.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 font-medium">Syntax Validation</span>
+            <div id="modalSyntax" class="font-bold text-slate-800 mt-1">Valid (RFC 5322)</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 font-medium">Account Category</span>
+            <div id="modalCategory" class="font-bold text-slate-800 mt-1">Personal / Corporate</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 font-medium">Disposable Provider</span>
+            <div id="modalDisposable" class="font-bold text-slate-800 mt-1">No</div>
+          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span class="text-slate-400 font-medium">Role Address</span>
+            <div id="modalRole" class="font-bold text-slate-800 mt-1">No (Direct User)</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">Resolved Mail Exchangers (DNS MX Records)</label>
+          <div id="modalMxList" class="mt-1.5 p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] max-h-36 overflow-y-auto custom-scrollbar">
+            No MX records
+          </div>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-800 space-y-1">
+          <div class="font-bold flex items-center gap-1.5">
+            <i data-lucide="help-circle" class="w-3.5 h-3.5"></i> Why individual mailbox status may be "Unknown":
+          </div>
+          <p class="text-[11px] leading-relaxed text-amber-700">
+            Modern mail transfer agents (Google, Microsoft 365, Yahoo) disable the historical SMTP <code class="bg-amber-100 px-1 py-0.5 rounded">VRFY</code> command to protect users against email address harvesting. Without sending a real email, server-level mailbox existence cannot be 100% guaranteed.
+          </p>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <button id="closeModalFooterBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl text-xs">
+          Close Window
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORT 25 & HOST LIMITATION DRAWER / MODAL -->
+  <div id="docsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+        <div class="flex items-center gap-2">
+          <i data-lucide="server" class="w-5 h-5 text-indigo-400"></i>
+          <h3 class="font-bold text-base">Port 25 SMTP &amp; Cloud Host Restrictions</h3>
+        </div>
+        <button id="closeDocsBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto custom-scrollbar space-y-5 text-xs text-slate-600 leading-relaxed">
+        
+        <div class="p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-900 space-y-2">
+          <h4 class="font-bold text-sm flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
+            Architectural Design of this Application
+          </h4>
+          <p>
+            To deliver instant, accurate results without needing insecure backend proxies or risking spam blacklists, this app executes <strong>live DNS-over-HTTPS (DoH)</strong> lookups against both <strong>Cloudflare Public DNS</strong> (<code class="bg-indigo-100 px-1 py-0.5 rounded font-mono">1.1.1.1</code>) and <strong>Google Public DNS</strong> (<code class="bg-indigo-100 px-1 py-0.5 rounded font-mono">8.8.8.8</code>).
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-500"></i>
+            Why Free Cloud Hosts Block Direct Port 25 Connections
+          </h4>
+          <p class="mb-2">
+            Most popular cloud platforms and VPS providers—including <strong>Render, Railway, PythonAnywhere, AWS EC2, DigitalOcean, and Heroku</strong>—strictly <strong>block outbound TCP Port 25</strong> on free or standard tiers.
+          </p>
+          <ul class="list-disc list-inside space-y-1.5 pl-2 text-slate-600">
+            <li><strong>Spam Prevention:</strong> Botnets and scrapers frequently spin up free cloud accounts to blast unsolicited spam messages. Blocking Port 25 protects provider IP reputation.</li>
+            <li><strong>IP Blacklisting:</strong> Hosting providers avoid their shared IP pools being placed on Spamhaus, Barracuda, or SpamCop blacklists.</li>
+            <li><strong>SMTP Greylisting:</strong> Direct socket handshakes from cloud IPs to target mail servers are often silently dropped or delayed by SpamAssassin or proofpoint filters.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-800 text-sm mb-1.5 flex items-center gap-2">
+            <i data-lucide="check-square" class="w-4 h-4 text-emerald-600"></i>
+            What This Deployed Version Can and Cannot Check
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+            <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50/40">
+              <span class="font-bold text-emerald-800 text-xs flex items-center gap-1 mb-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> Fully Verified &amp; Supported:
+              </span>
+              <ul class="list-disc list-inside space-y-1 text-[11px] text-emerald-900">
+                <li>Strict RFC 5322 regex &amp; structural syntax</li>
+                <li>Live DNS-over-HTTPS MX records query</li>
+                <li>Catch-all / Free Webmail provider heuristics</li>
+                <li>Role-based mailbox detection (admin, sales, etc.)</li>
+                <li>Disposable &amp; burner domain identification</li>
+                <li>Domain existence and active DNS resolution</li>
+              </ul>
+            </div>
+            <div class="p-3 rounded-xl border border-amber-200 bg-amber-50/40">
+              <span class="font-bold text-amber-800 text-xs flex items-center gap-1 mb-1">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i> Why "Unknown" Is Standard:
+              </span>
+              <ul class="list-disc list-inside space-y-1 text-[11px] text-amber-900">
+                <li>Mail servers disable <code class="font-mono">VRFY</code> commands</li>
+                <li>Servers accept all recipients then drop bounce later</li>
+                <li>Rate limits and greylisting on probing bots</li>
+                <li>Privacy preservation without sending unconsented mail</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <button id="closeDocsFooterBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl text-xs">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+</html>
